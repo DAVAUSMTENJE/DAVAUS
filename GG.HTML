@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>DavAus – Full Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Inter:wght@400;600&display=swap" rel="stylesheet"/>
+<style>
+  /* --- Global & Sidebar --- */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body, html { height:100%; display:flex; font-family:'Poppins',sans-serif; background:#ecf0f3; color:#2c3e50; }
+  .sidebar { background:#2980b9; width:280px; padding:30px; display:flex; flex-direction:column; color:white; box-shadow:5px 0 15px rgba(0,0,0,0.1); }
+  .sidebar h2 { font-size:24px; font-weight:700; margin-bottom:50px; text-shadow:0 2px 4px rgba(0,0,0,0.3); }
+  .user-info { text-align:center; margin-bottom:50px; }
+  .user-info img { width:110px; height:110px; border-radius:50%; object-fit:cover; border:4px solid white; box-shadow:0 4px 15px rgba(0,0,0,0.2); margin-bottom:12px; }
+  .user-info h3 { font-size:22px; font-weight:700; }
+  nav a { display:block; padding:15px; margin-bottom:12px; text-decoration:none; color:white; font-weight:600; border-radius:8px; transition:background .3s; }
+  nav a.active, nav a:hover { background:#1f6391; }
+  .logout-btn { margin-top:auto; padding:15px; background:#c0392b; color:white; border:none; border-radius:8px; font-weight:700; cursor:pointer; transition:background .3s; }
+  .logout-btn:hover { background:#922b21; }
+
+  /* --- Main Content & Containers --- */
+  .main-content { flex-grow:1; padding:30px; overflow-y:auto; }
+  .hidden { display:none; }
+  .content-section { background:white; padding:20px; margin-bottom:20px; border-radius:10px; box-shadow:0 10px 25px rgba(0,0,0,0.06); }
+  h1, h2, h3 { margin-bottom:20px; color:#1f3a63; }
+  form { display:flex; flex-direction:column; gap:12px; font-family:'Inter',sans-serif; }
+  input, textarea, select, button { font-family:'Inter',sans-serif; }
+  input, textarea, select { padding:10px; border:1px solid #ccc; border-radius:6px; font-size:16px; }
+  button { padding:10px; background:#2980b9; border:none; border-radius:6px; color:white; font-weight:600; cursor:pointer; transition:background .3s; }
+  button:hover { background:#1f6391; }
+  .tabs { display:flex; gap:20px; margin-bottom:20px; cursor:pointer; }
+  .tabs div { padding:10px 20px; border-bottom:3px solid transparent; font-weight:600; color:#555; }
+  .tabs .active { border-color:#2980b9; color:#2980b9; }
+
+  /* --- Charts --- */
+  .charts { display:flex; gap:20px; flex-wrap:wrap; }
+  .chart-box { background:#ecf0f3; padding:20px; border-radius:12px; flex:1; min-width:250px; box-shadow:8px 8px 15px rgba(0,0,0,0.05), -5px -5px 15px rgba(255,255,255,0.7); }
+
+  /* --- Ads UI --- */
+  .ad-card { border:1px solid #ddd; border-radius:10px; padding:15px; margin-top:15px; background:#f9f9f9; position:relative; }
+  .edit-btn, .delete-btn { position:absolute; top:10px; border:none; padding:5px 10px; border-radius:5px; cursor:pointer; }
+  .edit-btn { right:80px; background:#ffc107; color:black; }
+  .delete-btn { right:10px; background:#dc3545; color:white; }
+  .ad-display { text-align:center; margin-bottom:15px; }
+  .ad-display img, .ad-display video { max-width:100%; max-height:300px; border-radius:10px; }
+  .ad-controls { display:flex; justify-content:center; gap:15px; margin-bottom:20px; }
+
+  /* --- Sync Lists --- */
+  .file-list { border:1px solid #ccc; padding:10px; border-radius:6px; max-height:200px; overflow-y:auto; }
+  .file-item { display:flex; justify-content:space-between; margin-bottom:6px; }
+
+  /* --- Settings --- */
+  .settings-row { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+  .settings-row label { flex:1; font-weight:500; }
+</style>
+</head>
+<body>
+  <div style="display:flex; flex-grow:1;">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <h2>DavAus & White House</h2>
+      <div class="user-info">
+        <img id="profilePic" src="https://randomuser.me/api/portraits/men/32.jpg" alt="Profile"/>
+        <h3 id="userName">David Austin</h3>
+      </div>
+      <nav>
+        <a href="#" id="navMain" class="active">Main Dashboard</a>
+        <a href="#" id="navAds">Ads Dashboard</a>
+        <a href="#" id="navSync">Sync Data</a>
+        <a href="#" id="navSettings">Settings</a>
+      </nav>
+      <button class="logout-btn">Log Out</button>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <!-- Main Dashboard -->
+      <div id="mainPage" class="content-section">
+        <h1>Welcome, David!</h1>
+        <div class="charts">
+          <div class="chart-box"><h3>Monthly Data Usage</h3><canvas id="chartUsage"></canvas></div>
+          <div class="chart-box"><h3>Device Connections</h3><canvas id="chartDevices"></canvas></div>
+        </div>
+      </div>
+
+      <!-- Ads Dashboard -->
+      <div id="adsPage" class="hidden">
+        <div class="content-section">
+          <h2>Admin: Manage Ads</h2>
+          <div class="tabs">
+            <div id="tabAdsPanel" class="active" onclick="switchAdTab('ads')">Add/Edit Ads</div>
+            <div id="tabFeedbackPanel" onclick="switchAdTab('feedback')">User Feedback</div>
+          </div>
+          <div id="adsSection">
+            <form id="adForm">
+              <input type="hidden" name="editIndex" value="-1"/>
+              <input type="text" name="title" placeholder="Ad Title" required/>
+              <textarea name="description" rows="2" placeholder="Description" required></textarea>
+              <select name="category" required>
+                <option value="">Choose Category</option>
+                <option>Movies</option><option>Songs</option><option>Clothes</option><option>Sports</option>
+                <option>Tech</option><option>Travel</option>
+              </select>
+              <input type="file" name="media" accept="image/*,video/*" required/>
+              <button type="submit">Save Ad</button>
+            </form>
+            <div id="adminAds"></div>
+          </div>
+          <div id="feedbackSection" class="hidden">
+            <h3>User Feedback</h3>
+            <div id="feedbackList"><p>No feedback yet.</p></div>
+          </div>
+        </div>
+        <div class="content-section">
+          <h2>User: View Ads</h2>
+          <select id="userCategory">
+            <option value="">Filter by Category</option>
+            <option>Movies</option><option>Songs</option><option>Clothes</option><option>Sports</option><option>Tech</option><option>Travel</option>
+          </select>
+          <div class="ad-display" id="adDisplay"></div>
+          <div class="ad-controls">
+            <button onclick="prevAd()">Previous</button>
+            <button onclick="nextAd()">Next</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sync Data -->
+      <div id="syncPage" class="hidden">
+        <div class="content-section">
+          <h2>Sync Data</h2>
+          <div class="tabs">
+            <div id="tabPics" class="active" onclick="switchSyncTab('pics')">Pics</div>
+            <div id="tabDocs" onclick="switchSyncTab('docs')">Docs</div>
+            <div id="tabVids" onclick="switchSyncTab('videos')">Videos</div>
+            <div id="tabHist" onclick="switchSyncTab('history')">History</div>
+          </div>
+          <div id="syncPics">
+            <input type="file" id="picsInput" multiple accept="image/*"/>
+            <button onclick="syncFiles('pics')">Sync Pics</button>
+            <div id="picsList" class="file-list"></div>
+          </div>
+          <div id="syncDocs" class="hidden">
+            <input type="file" id="docsInput" multiple accept=".pdf,.xls,.xlsx,.doc,.docx,.txt"/>
+            <button onclick="syncFiles('docs')">Sync Docs</button>
+            <div id="docsList" class="file-list"></div>
+          </div>
+          <div id="syncVideos" class="hidden">
+            <input type="file" id="videosInput" multiple accept="video/*"/>
+            <button onclick="syncFiles('videos')">Sync Videos</button>
+            <div id="videosList" class="file-list"></div>
+          </div>
+          <div id="syncHistory" class="hidden">
+            <h3>Download Synced Files</h3>
+            <div id="historyList" class="file-list"></div>
+            <button onclick="downloadAll()" style="margin-top:10px;">Download All</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Settings -->
+      <div id="settingsPage" class="hidden content-section">
+        <h2>Settings</h2>
+        <form id="settingsForm">
+          <div class="settings-row">
+            <label for="nameInput">Name:</label>
+            <input id="nameInput" type="text" value="David Austin"/>
+          </div>
+          <div class="settings-row">
+            <label for="emailInput">Email:</label>
+            <input id="emailInput" type="email" value="david@example.com"/>
+          </div>
+          <div class="settings-row">
+            <label for="picInput">Profile Picture:</label>
+            <input id="picInput" type="file" accept="image/*"/>
+          </div>
+          <div class="settings-row">
+            <label for="passwordInput">New Password:</label>
+            <input id="passwordInput" type="password" placeholder="••••••"/>
+          </div>
+          <div class="settings-row">
+            <label><input type="checkbox" id="notifyEmail"/> Email Notifications</label>
+          </div>
+          <div class="settings-row">
+            <label><input type="checkbox" id="notifySms"/> SMS Notifications</label>
+          </div>
+          <div class="settings-row">
+            <label>Theme:</label>
+            <select id="themeSelect">
+              <option value="light">Light</option>
+              <option value="dark">Dark</option>
+            </select>
+          </div>
+          <button type="submit">Save Settings</button>
+        </form>
+        <div id="settingsMsg" style="margin-top:10px;color:green;"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    // NAVIGATION
+    const sections = ['main','ads','sync','settings'];
+    sections.forEach(s => {
+      document.getElementById(`nav${s.charAt(0).toUpperCase()+s.slice(1)}`)
+        .addEventListener('click', e => {
+          e.preventDefault();
+          sections.forEach(sec => {
+            document.getElementById(`${sec}Page`).classList.toggle('hidden', sec!==s);
+            document.getElementById(`nav${sec.charAt(0).toUpperCase()+sec.slice(1)}`)
+              .classList.toggle('active', sec===s);
+          });
+        });
+    });
+
+    // CHARTS
+    new Chart(document.getElementById('chartUsage'), {
+      type:'bar',
+      data:{labels:['Jan','Feb','Mar','Apr','May','Jun'], datasets:[{data:[120,190,300,250,320,400], backgroundColor:'#2980b9'}]},
+      options:{responsive:true, plugins:{legend:{display:false}}}
+    });
+    new Chart(document.getElementById('chartDevices'), {
+      type:'line',
+      data:{labels:['Jan','Feb','Mar','Apr','May','Jun'], datasets:[{data:[3,5,4,6,7,8], borderColor:'#2980b9', fill:false}]},
+      options:{responsive:true, plugins:{legend:{display:false}}}
+    });
+
+    // ADS LOGIC
+    let ads = JSON.parse(localStorage.ads||'[]'), filteredAds=[], adIdx = 0, adTimer;
+    function saveAds() { localStorage.ads = JSON.stringify(ads); }
+    function renderAdminAds() {
+      const box = document.getElementById('adminAds'); box.innerHTML='';
+      if (!ads.length) { box.innerHTML = '<p>No ads yet.</p>'; return; }
+      ads.forEach((ad,i) => {
+        const d = document.createElement('div'); d.className='ad-card';
+        d.innerHTML = `<strong>${ad.title}</strong><br>${ad.description}<br><em>${ad.category}</em><br>`
+                    + (ad.type==='video'? `<video src="${ad.mediaUrl}" width="250" controls></video>` : `<img src="${ad.mediaUrl}" width="250"/>`)
+                    + `<button class="edit-btn" onclick="editAd(${i})">Edit</button><button class="delete-btn" onclick="deleteAd(${i})">Delete</button>`;
+        box.appendChild(d);
+      });
+    }
+    document.getElementById('adForm').onsubmit = e => {
+      e.preventDefault();
+      const f = e.target, idx = +f.editIndex.value, file = f.media.files[0];
+      const rd = new FileReader();
+      rd.onload = ev => {
+        const type = file.type.startsWith('video') ? 'video' : 'image';
+        const adObj = { title:f.title.value, description:f.description.value, category:f.category.value, mediaUrl:ev.target.result, type };
+        if (idx>=0) ads[idx] = adObj; else ads.push(adObj);
+        f.reset(); f.editIndex.value='-1';
+        saveAds(); renderAdminAds(); filterAds();
+      };
+      rd.readAsDataURL(file);
+    };
+    function editAd(i) {
+      const ad=ads[i], f=document.forms.adForm;
+      f.title.value=ad.title; f.description.value=ad.description; f.category.value=ad.category; f.editIndex.value=i;
+    }
+    function deleteAd(i) {
+      if (confirm('Delete this ad?')) { ads.splice(i,1); saveAds(); renderAdminAds(); filterAds(); }
+    }
+    function switchAdTab(tab) {
+      document.getElementById('adsSection').classList.toggle('hidden', tab!=='ads');
+      document.getElementById('feedbackSection').classList.toggle('hidden', tab!=='feedback');
+      document.getElementById('tabAdsPanel').classList.toggle('active', tab==='ads');
+      document.getElementById('tabFeedbackPanel').classList.toggle('active', tab==='feedback');
+      renderFeedback();
+    }
+
+    let feedbacks = JSON.parse(localStorage.feedbacks||'[]');
+    function renderFeedback() {
+      const box = document.getElementById('feedbackList');
+      box.innerHTML = feedbacks.length ? feedbacks.map(fb=>`<div class="ad-card"><strong>${fb.name}</strong> <em>${fb.time}</em><br>${fb.message}</div>`).join('') : '<p>No feedback yet.</p>';
+    }
+
+    document.getElementById('userCategory').onchange = filterAds;
+    function filterAds() {
+      const cat = document.getElementById('userCategory').value;
+      filteredAds = ads.filter(a=>!cat||a.category===cat);
+      adIdx = 0; renderUserAd(); rotateAds();
+    }
+    function renderUserAd() {
+      const box = document.getElementById('adDisplay');
+      if (!filteredAds.length) { box.innerHTML = '<p>No ads to show.</p>'; return; }
+      const ad = filteredAds[adIdx];
+      box.innerHTML = (ad.type==='video' ? `<video src="${ad.mediaUrl}" controls autoplay playsinline></video>` : `<img src="${ad.mediaUrl}"/>`)
+                    + `<h3>${ad.title}</h3><p>${ad.description}</p>`;
+    }
+    function nextAd() { if(filteredAds.length){ adIdx = (adIdx+1) % filteredAds.length; renderUserAd(); } }
+    function prevAd() { if(filteredAds.length){ adIdx = (adIdx-1+filteredAds.length) % filteredAds.length; renderUserAd(); } }
+    function rotateAds() { clearInterval(adTimer); adTimer = setInterval(nextAd, 5000); }
+
+    // SYNC DATA
+    let syncData = JSON.parse(localStorage.syncData||'{"pics":[],"docs":[],"videos":[]}');
+    function saveSync() { localStorage.syncData = JSON.stringify(syncData); }
+    function syncFiles(type) {
+      const input = document.getElementById(`${type}Input`);
+      Array.from(input.files).forEach(file => {
+        const rd = new FileReader();
+        rd.onload = e => {
+          syncData[type].push({ name:file.name, data:e.target.result });
+          saveSync(); renderSync(type); renderHistory();
+        };
+        rd.readAsDataURL(file);
+      });
+    }
+    function renderSync(type) {
+      const div = document.getElementById(`${type}List`);
+      div.innerHTML = syncData[type].map(f=>`<div class="file-item">${f.name} <a href="${f.data}" download="${f.name}">⬇️</a></div>`).join('');
+    }
+    function renderHistory() {
+      const div = document.getElementById('historyList');
+      const all = ['pics','docs','videos'].flatMap(t => syncData[t].map(f=>({...f,type:t})));
+      div.innerHTML = all.map(f=>`<div class="file-item">[${f.type}] ${f.name} <a href="${f.data}" download="${f.name}">⬇️</a></div>`).join('');
+    }
+    function switchSyncTab(tab) {
+      ['pics','docs','videos','history'].forEach(t=>{
+        document.getElementById(`sync${t.charAt(0).toUpperCase()+t.slice(1)}`).classList.toggle('hidden', t!==tab);
+        document.getElementById(`tab${t.charAt(0).toUpperCase()+t.slice(1)}`).classList.toggle('active', t===tab);
+      });
+    }
+    function downloadAll() {
+      ['pics','docs','videos'].forEach(t => syncData[t].forEach(f=> {
+        const a = document.createElement('a');
+        a.href = f.data; a.download = f.name; document.body.appendChild(a);
+        a.click(); document.body.removeChild(a);
+      }));
+    }
+
+    // SETTINGS
+    document.getElementById('picInput').onchange = e => {
+      const rd = new FileReader();
+      rd.onload = ev => { document.getElementById('profilePic').src = ev.target.result; };
+      rd.readAsDataURL(e.target.files[0]);
+    };
+    document.getElementById('settingsForm').onsubmit = e => {
+      e.preventDefault();
+      document.getElementById('userName').innerText = document.getElementById('nameInput').value;
+      document.getElementById('settingsMsg').innerText = 'Settings saved!';
+      setTimeout(()=>document.getElementById('settingsMsg').innerText='',2000);
+    };
+
+    // INIT
+    window.onload = () => {
+      renderAdminAds(); filterAds();
+      renderSync('pics'); renderSync('docs'); renderSync('videos'); renderHistory();
+    };
+  </script>
+</body>
+</html>
