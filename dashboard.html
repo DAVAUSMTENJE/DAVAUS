@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Dashboard – DavAus & White House</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    /* Base Reset & Theme As Before */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body, html { height:100%; font-family:'Poppins', sans-serif; background:#ecf0f3; display:flex; color:#2c3e50; }
+    .sidebar { background:#2980b9; width:280px; padding:30px; color:white; display:flex; flex-direction:column; box-shadow:5px 0 15px rgba(0,0,0,0.1); }
+    .sidebar h2 { font-weight:700; font-size:24px; margin-bottom:50px; text-shadow:0 2px 4px rgba(0,0,0,0.3); }
+    .user-info { text-align:center; margin-bottom:50px; }
+    .user-info img { width:110px; height:110px; border-radius:50%; object-fit:cover; border:4px solid white; box-shadow:0 4px 15px rgba(0,0,0,0.2); margin-bottom:12px; }
+    .user-info h3 { font-weight:700; font-size:22px; letter-spacing:0.5px; }
+    nav a { display:block; padding:15px 20px; margin-bottom:12px; color:white; text-decoration:none; font-weight:600; border-radius:8px; transition:background 0.3s, transform 0.2s; }
+    nav a:hover, nav a.active { background:#1f6391; transform:translateX(5px); }
+    .logout-btn { margin-top:auto; background:#c0392b; color:white; padding:15px 0; border:none; border-radius:8px; font-weight:700; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.2); transition:background 0.3s, transform 0.2s; }
+    .logout-btn:hover { background:#922b21; transform:scale(1.05); }
+
+    .main-content { flex-grow:1; padding:50px 40px; background:#ecf0f3; overflow-y:auto; }
+    .main-content h1 { font-weight:700; font-size:32px; margin-bottom:20px; color:#1f3a63; }
+    .welcome-msg { font-size:18px; color:#555; margin-bottom:40px; }
+
+    .charts-container { display:flex; gap:30px; flex-wrap:wrap; }
+    .chart-box { background:#ecf0f3; padding:25px; border-radius:20px; flex:1; min-width:300px; box-shadow:8px 8px 15px rgba(0,0,0,0.05), -5px -5px 15px rgba(255,255,255,0.7); transition:transform 0.3s; }
+    .chart-box:hover { transform: translateY(-5px); }
+    .chart-box h3 { margin-bottom:15px; font-size:20px; color:#2980b9; }
+
+    .tabs { display:flex; gap:12px; margin-bottom:30px; }
+    .tab { padding:15px 30px; cursor:pointer; font-weight:600; background:#ecf0f3; color:#2980b9; border-radius:12px 12px 0 0; box-shadow:5px 5px 10px rgba(0,0,0,0.1), -5px -5px 10px rgba(255,255,255,0.7); transition:background 0.3s, transform 0.2s; user-select:none; }
+    .tab.active { background:white; color:#1f3a63; box-shadow: inset 0 -3px 0 #2980b9; transform: translateY(2px); }
+    .tab:hover:not(.active) { background:#d6e6fb; }
+
+    .tab-content { background:white; padding:30px; border-radius:0 0 20px 20px; box-shadow:5px 5px 15px rgba(0,0,0,0.1), -5px -5px 15px rgba(255,255,255,0.7); }
+
+    label.file-picker { display:inline-block; margin-top:15px; padding:15px 30px; background:#2980b9; color:white; font-weight:600; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.1); transition:background 0.3s; cursor:pointer; }
+    label.file-picker:hover { background:#1f6391; }
+    input[type=file], input[type=text], input[type=email], input[type=tel], input[type=password] { display:block; width:100%; padding:15px; margin-top:10px; font-size:16px; border:1px solid #ccc; border-radius:8px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1); transition:box-shadow 0.3s; }
+    input[type=text]:focus, input[type=email]:focus, input[type=tel]:focus, input[type=password]:focus { outline:none; box-shadow:0 0 4px #2980b9; }
+
+    .selected-files { margin-top:15px; font-size:15px; color:#34495e; background:#f2f6fc; padding:15px; border-radius:8px; max-height:120px; overflow-y:auto; box-shadow:inset 0 1px 3px rgba(0,0,0,0.1); }
+
+    .sync-btn { margin-top:25px; padding:15px 35px; font-size:17px; font-weight:700; border:none; border-radius:8px; cursor:pointer; background:#2980b9; color:white; box-shadow:0 4px 12px rgba(0,0,0,0.1); transition:background 0.3s, transform 0.2s; }
+    .sync-btn:hover:not(:disabled) { background:#1f6391; transform:scale(1.05); }
+    .sync-btn:disabled { background:#7f8c8d; cursor:not-allowed; }
+
+    .progress-container { margin-top:15px; background:#ddd; border-radius:8px; overflow:hidden; height:30px; display:none; }
+    .progress-bar { height:100%; background:#2980b9; width:0; color:white; display:flex; align-items:center; justify-content:center; font-weight:600; font-size:15px; transition:width 0.1s linear; }
+    .sync-message { margin-top:15px; color:green; font-weight:600; font-size:15px; min-height:22px; }
+
+    .download-btn { margin-top:20px; padding:12px 30px; background:#27ae60; color:white; font-weight:700; border:none; border-radius:8px; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.1); transition:background 0.3s; }
+    .download-btn:hover { background:#1e8449; }
+
+    /* Settings form styles */
+    .settings-form label { font-weight:600; margin-top:20px; display:block; }
+    .settings-form input[type=checkbox] { width: auto; margin-right: 8px; vertical-align: middle; }
+    .settings-form .form-row { margin-bottom: 15px; }
+    .settings-form button.save-btn { background:#2980b9; color:white; border:none; padding:15px 40px; font-weight:700; font-size:16px; border-radius:8px; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.1); transition:background 0.3s; margin-top:30px; }
+    .settings-form button.save-btn:hover { background:#1f6391; }
+
+    @media(max-width:900px){ 
+      body{flex-direction:column;} 
+      .sidebar{width:100%;flex-direction:row;padding:20px;border-radius:0 0 20px 20px;overflow-x:auto;} 
+      nav{display:flex;gap:12px;} 
+      .main-content{padding:20px;} 
+      .tabs{flex-wrap: wrap;}
+    }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <h2>DavAus & White House</h2>
+    <div class="user-info">
+      <img id="profilePic" src="https://via.placeholder.com/110" alt="Profile"/>
+      <h3 id="userName">Loading...</h3>
+    </div>
+    <nav>
+      <a href="#" id="navDashboard" class="active">Dashboard</a>
+      <a href="#" id="navSync">Sync Data</a>
+      <a href="#" id="navSettings">Settings</a>
+    </nav>
+    <button class="logout-btn" id="logoutBtn">Log Out</button>
+  </aside>
+
+  <main class="main-content">
+    <!-- Dashboard -->
+    <div id="dashboardPage">
+      <h1>Welcome, <span id="welcomeName">User</span>!</h1>
+      <p class="welcome-msg">Your mobile data is now synced securely.</p>
+      <div class="charts-container">
+        <div class="chart-box"><h3>Monthly Data Usage (MB)</h3><canvas id="dataUsageChart"></canvas></div>
+        <div class="chart-box"><h3>Device Connections</h3><canvas id="deviceConnectionsChart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Sync Data -->
+    <div id="syncPage" style="display:none;">
+      <h1>Sync Data</h1>
+      <div class="tabs">
+        <div class="tab active" data-tab="files">Files</div>
+        <div class="tab" data-tab="pics">Pics</div>
+        <div class="tab" data-tab="audio">Audio</div>
+        <div class="tab" data-tab="docs">Docs</div>
+        <div class="tab" data-tab="db">Database</div>
+      </div>
+
+      <!-- Files -->
+      <div class="tab-content" id="filesTab">
+        <label class="file-picker" for="filesInput">Select Files</label>
+        <input type="file" id="filesInput" multiple style="display:none;" accept=".pdf,.xls,.xlsx"/>
+        <div class="selected-files" id="filesSelected"></div>
+        <button class="sync-btn" id="syncFilesBtn" disabled>Sync Files</button>
+        <div class="progress-container" id="filesProgressContainer"><div class="progress-bar" id="filesProgressBar">0%</div></div>
+        <div class="sync-message" id="filesSyncMessage"></div>
+      </div>
+
+      <!-- Pics -->
+      <div class="tab-content" id="picsTab" style="display:none;">
+        <label class="file-picker" for="picsInput">Select Pictures</label>
+        <input type="file" id="picsInput" multiple style="display:none;" accept="image/*"/>
+        <div class="selected-files" id="picsSelected"></div>
+        <button class="sync-btn" id="syncPicsBtn" disabled>Sync Pictures</button>
+        <div class="progress-container" id="picsProgressContainer"><div class="progress-bar" id="picsProgressBar">0%</div></div>
+        <div class="sync-message" id="picsSyncMessage"></div>
+      </div>
+
+      <!-- Audio -->
+      <div class="tab-content" id="audioTab" style="display:none;">
+        <label class="file-picker" for="audioInput">Select Audio</label>
+        <input type="file" id="audioInput" multiple style="display:none;" accept="audio/*"/>
+        <div class="selected-files" id="audioSelected"></div>
+        <button class="sync-btn" id="syncAudioBtn" disabled>Sync Audio</button>
+        <div class="progress-container" id="audioProgressContainer"><div class="progress-bar" id="audioProgressBar">0%</div></div>
+        <div class="sync-message" id="audioSyncMessage"></div>
+      </div>
+
+      <!-- Docs -->
+      <div class="tab-content" id="docsTab" style="display:none;">
+        <label class="file-picker" for="docsInput">Select Documents</label>
+        <input type="file" id="docsInput" multiple style="display:none;" accept=".pdf,.xls,.xlsx,.doc,.docx,.txt"/>
+        <div class="selected-files" id="docsSelected"></div>
+        <button class="sync-btn" id="syncDocsBtn" disabled>Sync Documents</button>
+        <div class="progress-container" id="docsProgressContainer"><div class="progress-bar" id="docsProgressBar">0%</div></div>
+        <div class="sync-message" id="docsSyncMessage"></div>
+      </div>
+
+      <!-- Database -->
+      <div class="tab-content" id="dbTab" style="display:none;">
+        <label for="phoneInput">Enter Phone Number for Sync</label>
+        <input type="tel" id="phoneInput" placeholder="+1234567890"/>
+        <button class="sync-btn" id="syncDbBtn" disabled>Sync Database</button>
+        <div class="sync-message" id="dbSyncMessage"></div>
+      </div>
+    </div>
+
+    <!-- Settings -->
+    <div id="settingsPage" style="display:none;">
+      <h1>Settings</h1>
+      <form class="settings-form" id="settingsForm" autocomplete="off">
+        <div class="form-row">
+          <label for="settingsName">Name</label>
+          <input type="text" id="settingsName" placeholder="Your name" required/>
+        </div>
+        <div class="form-row">
+          <label for="settingsEmail">Email</label>
+          <input type="email" id="settingsEmail" placeholder="email@example.com" required/>
+        </div>
+        <div class="form-row">
+          <label>Sync Preferences</label>
+          <label><input type="checkbox" id="syncAudioPref"/> Sync Audio Files</label><br/>
+          <label><input type="checkbox" id="syncPdfPref"/> Sync PDF/XLS Files</label>
+        </div>
+        <div class="form-row">
+          <label>Notifications</label>
+          <label><input type="checkbox" id="notifyEmailPref"/> Email Notifications</label><br/>
+          <label><input type="checkbox" id="notifySmsPref"/> SMS Notifications</label>
+        </div>
+        <div class="form-row">
+          <label for="settingsPassword">Change Password</label>
+          <input type="password" id="settingsPassword" placeholder="New password"/>
+        </div>
+        <button type="submit" class="save-btn">Save Settings</button>
+      </form>
+      <div id="settingsMessage" style="margin-top:20px; font-weight:600; color:green; display:none;">Settings saved successfully!</div>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    // Sample user data (simulate API fetch)
+    const userData = {
+      name: "David Austin",
+      email: "david.austin@example.com",
+      profilePic: "https://randomuser.me/api/portraits/men/32.jpg"
+    };
+
+    // Initialize UI references
+    const navDashboard = document.getElementById('navDashboard');
+    const navSync = document.getElementById('navSync');
+    const navSettings = document.getElementById('navSettings');
+    const dashboardPage = document.getElementById('dashboardPage');
+    const syncPage = document.getElementById('syncPage');
+    const settingsPage = document.getElementById('settingsPage');
+    const welcomeName = document.getElementById('welcomeName');
+    const userName = document.getElementById('userName');
+    const profilePic = document.getElementById('profilePic');
+
+    // Sidebar nav switching
+    function showPage(page) {
+      dashboardPage.style.display = 'none';
+      syncPage.style.display = 'none';
+      settingsPage.style.display = 'none';
+      navDashboard.classList.remove('active');
+      navSync.classList.remove('active');
+      navSettings.classList.remove('active');
+      if (page === 'dashboard') {
+        dashboardPage.style.display = 'block';
+        navDashboard.classList.add('active');
+      } else if (page === 'sync') {
+        syncPage.style.display = 'block';
+        navSync.classList.add('active');
+      } else if (page === 'settings') {
+        settingsPage.style.display = 'block';
+        navSettings.classList.add('active');
+      }
+    }
+
+    navDashboard.addEventListener('click', e => { e.preventDefault(); showPage('dashboard'); });
+    navSync.addEventListener('click', e => { e.preventDefault(); showPage('sync'); });
+    navSettings.addEventListener('click', e => { e.preventDefault(); showPage('settings'); });
+
+    // Populate user data
+    function loadUserData() {
+      userName.textContent = userData.name;
+      welcomeName.textContent = userData.name.split(' ')[0];
+      profilePic.src = userData.profilePic;
+      document.getElementById('settingsName').value = userData.name;
+      document.getElementById('settingsEmail').value = userData.email;
+      // For demo: set preferences default to checked
+      document.getElementById('syncAudioPref').checked = true;
+      document.getElementById('syncPdfPref').checked = true;
+      document.getElementById('notifyEmailPref').checked = true;
+      document.getElementById('notifySmsPref').checked = false;
+    }
+
+    // Log out button (demo)
+    document.getElementById('logoutBtn').onclick = () => alert('Logging out...');
+
+    // Charts (demo data)
+    const dataUsageCtx = document.getElementById('dataUsageChart').getContext('2d');
+    const deviceConnCtx = document.getElementById('deviceConnectionsChart').getContext('2d');
+    const dataUsageChart = new Chart(dataUsageCtx, {
+      type: 'bar',
+      data: {
+        labels: ['Jan','Feb','Mar','Apr','May','Jun'],
+        datasets: [{ label: 'MB Used', backgroundColor: '#2980b9', data: [120, 190, 300, 250, 320, 400] }]
+      },
+      options: { responsive:true, plugins:{ legend:{display:false} } }
+    });
+    const deviceConnectionsChart = new Chart(deviceConnCtx, {
+      type: 'line',
+      data: {
+        labels: ['Jan','Feb','Mar','Apr','May','Jun'],
+        datasets: [{ label: 'Devices', borderColor: '#2980b9', data: [3, 5, 4, 6, 7, 8], fill:false, tension:0.3 }]
+      },
+      options: { responsive:true, plugins:{ legend:{display:false} } }
+    });
+
+    // Tabs in Sync Data
+    const tabs = document.querySelectorAll('.tabs .tab');
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        tabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        const selectedTab = tab.getAttribute('data-tab');
+        document.querySelectorAll('#syncPage .tab-content').forEach(content => {
+          content.style.display = content.id === selectedTab + 'Tab' ? 'block' : 'none';
+        });
+      });
+    });
+
+    // File inputs and syncing logic helper
+    function setupFileSync(inputId, selectedDivId, syncBtnId, progressContainerId, progressBarId, syncMessageId, allowedTypes) {
+      const input = document.getElementById(inputId);
+      const selectedDiv = document.getElementById(selectedDivId);
+      const syncBtn = document.getElementById(syncBtnId);
+      const progressContainer = document.getElementById(progressContainerId);
+      const progressBar = document.getElementById(progressBarId);
+      const syncMessage = document.getElementById(syncMessageId);
+
+      input.addEventListener('change', () => {
+        const files = Array.from(input.files);
+        if (files.length === 0) {
+          selectedDiv.textContent = 'No files selected.';
+          syncBtn.disabled = true;
+          return;
+        }
+        // Filter by allowed types if provided
+        const filteredFiles = allowedTypes ? files.filter(f => allowedTypes.some(type => f.type.includes(type))) : files;
+        if(filteredFiles.length === 0) {
+          selectedDiv.textContent = 'No compatible files selected.';
+          syncBtn.disabled = true;
+          return;
+        }
+        selectedDiv.innerHTML = filteredFiles.map(f => `<div>${f.name}</div>`).join('');
+        syncBtn.disabled = false;
+        syncMessage.textContent = '';
+        progressContainer.style.display = 'none';
+        progressBar.style.width = '0%';
+        progressBar.textContent = '0%';
+      });
+
+      syncBtn.addEventListener('click', () => {
+        syncBtn.disabled = true;
+        progressContainer.style.display = 'block';
+        syncMessage.textContent = '';
+        let progress = 0;
+        progressBar.style.width = '0%';
+        progressBar.textContent = '0%';
+
+        const interval = setInterval(() => {
+          progress += 10;
+          if (progress > 100) progress = 100;
+          progressBar.style.width = progress + '%';
+          progressBar.textContent = progress + '%';
+          if (progress >= 100) {
+            clearInterval(interval);
+            syncMessage.textContent = 'Sync completed successfully!';
+            syncBtn.disabled = false;
+            // Clear file selection for demo
+            input.value = '';
+            selectedDiv.textContent = 'No files selected.';
+            progressContainer.style.display = 'none';
+          }
+        }, 300);
+      });
+    }
+
+    // Setup sync for each category with appropriate file type filters
+    setupFileSync('filesInput', 'filesSelected', 'syncFilesBtn', 'filesProgressContainer', 'filesProgressBar', 'filesSyncMessage', ['pdf', 'excel', 'spreadsheet', 'xls', 'xlsx']);
+    setupFileSync('picsInput', 'picsSelected', 'syncPicsBtn', 'picsProgressContainer', 'picsProgressBar', 'picsSyncMessage');
+    setupFileSync('audioInput', 'audioSelected', 'syncAudioBtn', 'audioProgressContainer', 'audioProgressBar', 'audioSyncMessage');
+    setupFileSync('docsInput', 'docsSelected', 'syncDocsBtn', 'docsProgressContainer', 'docsProgressBar', 'docsSyncMessage');
+
+    // Database sync (phone input)
+    const phoneInput = document.getElementById('phoneInput');
+    const syncDbBtn = document.getElementById('syncDbBtn');
+    const dbSyncMessage = document.getElementById('dbSyncMessage');
+
+    phoneInput.addEventListener('input', () => {
+      const validPhone = /^\+?[0-9]{7,15}$/.test(phoneInput.value.trim());
+      syncDbBtn.disabled = !validPhone;
+      dbSyncMessage.textContent = '';
+    });
+
+    syncDbBtn.addEventListener('click', () => {
+      syncDbBtn.disabled = true;
+      dbSyncMessage.style.color = 'green';
+      dbSyncMessage.textContent = 'Syncing database for phone: ' + phoneInput.value.trim() + ' ...';
+
+      setTimeout(() => {
+        dbSyncMessage.textContent = 'Database synced successfully!';
+        syncDbBtn.disabled = false;
+        phoneInput.value = '';
+      }, 3000);
+    });
+
+    // Settings form submit handler
+    const settingsForm = document.getElementById('settingsForm');
+    const settingsMessage = document.getElementById('settingsMessage');
+
+    settingsForm.addEventListener('submit', e => {
+      e.preventDefault();
+      // Simulate saving settings
+      userData.name = document.getElementById('settingsName').value.trim();
+      userData.email = document.getElementById('settingsEmail').value.trim();
+
+      // Update UI with new name/email
+      userName.textContent = userData.name;
+      welcomeName.textContent = userData.name.split(' ')[0];
+
+      settingsMessage.style.display = 'block';
+      setTimeout(() => {
+        settingsMessage.style.display = 'none';
+      }, 3000);
+    });
+
+    // Initialize page
+    loadUserData();
+  </script>
+</body>
+</html>
